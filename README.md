@@ -17,7 +17,15 @@ Edite o arquivo `login.txt` na raiz do projeto antes de compilar. Exemplo:
 admin:123456
 ```
 
-### 2. Compile o executável portátil
+### 2. (Opcional) Troque a chave de criptografia
+Para maior segurança, você pode alterar a chave e o IV (vetor de inicialização) usados na criptografia:
+- Abra o arquivo `Utils/CryptoUtils.cs`.
+- Substitua os valores dos arrays `key` (32 bytes) e `iv` (16 bytes) por outros valores aleatórios.
+- Exemplo de como gerar novos valores:
+  - Use um gerador de bytes aleatórios seguro, como o site [random.org](https://www.random.org/bytes/) ou um script em Python/C#.
+- **Atenção:** Só arquivos criptografados com a mesma chave/IV poderão ser descriptografados pelo programa.
+
+### 3. Compile o executável portátil
 Execute:
 ```sh
 dotnet restore
