@@ -72,10 +72,11 @@ namespace CryptoTxt
             // 
             // lblHint
             // 
-            this.lblHint.AutoSize = true;
-            this.lblHint.Location = new System.Drawing.Point(30, 85);
+            this.lblHint.AutoSize = false;
+            this.lblHint.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblHint.Location = new System.Drawing.Point(20, 140);
             this.lblHint.Name = "lblHint";
-            this.lblHint.Size = new System.Drawing.Size(0, 13);
+            this.lblHint.Size = new System.Drawing.Size(240, 20);
             this.lblHint.TabIndex = 5;
             this.lblHint.ForeColor = System.Drawing.Color.Gray;
             // 
@@ -84,7 +85,7 @@ namespace CryptoTxt
             this.AcceptButton = this.btnLogin;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(280, 150);
+            this.ClientSize = new System.Drawing.Size(280, 180);
             this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.txtPass);
             this.Controls.Add(this.txtUser);

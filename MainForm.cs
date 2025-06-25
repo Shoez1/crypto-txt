@@ -50,6 +50,11 @@ namespace CryptoTxt
                 MessageBox.Show("Selecione um arquivo válido.");
                 return;
             }
+            if (!txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("Selecione um arquivo .enc para descriptografar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             try
             {
                 string encrypted = File.ReadAllText(txtFilePath.Text);

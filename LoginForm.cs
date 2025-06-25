@@ -15,11 +15,17 @@ namespace CryptoTxt
         public LoginForm()
         {
             InitializeComponent();
+            this.Text = "Login - CryptoTxt v1.0.2";
             LoadLoginInfo();
             if (!string.IsNullOrEmpty(senhaHint))
+            {
                 lblHint.Text = $"Dica de senha: {senhaHint}";
+                lblHint.Visible = true;
+            }
             else
-                lblHint.Text = string.Empty;
+            {
+                lblHint.Visible = false;
+            }
         }
 
         private void LoadLoginInfo()
