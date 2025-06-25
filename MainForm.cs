@@ -81,5 +81,44 @@ namespace CryptoTxt
                 MessageBox.Show($"Erro ao descriptografar: {ex.Message}");
             }
         }
+
+        private void btnPreview_Click(object sender, EventArgs e)
+        {
+            if (!File.Exists(txtFilePath.Text))
+            {
+                MessageBox.Show("Selecione um arquivo válido.");
+                return;
+            }
+            if (!txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("Selecione um arquivo .enc para visualizar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                string encrypted = File.ReadAllText(txtFilePath.Text);
+                string plainText = Utils.CryptoUtils.Decrypt(encrypted);
+                using (var previewForm = new Form())
+                {
+                    previewForm.Text = "Visualização do Conteúdo";
+                    previewForm.Width = 600;
+                    previewForm.Height = 500;
+                    var textBox = new TextBox();
+                    textBox.Multiline = true;
+                    textBox.ReadOnly = true;
+                    textBox.ScrollBars = ScrollBars.Both;
+                    textBox.Dock = DockStyle.Fill;
+                    textBox.Font = new System.Drawing.Font("Consolas", 10);
+                    textBox.Text = plainText;
+                    previewForm.Controls.Add(textBox);
+                    previewForm.StartPosition = FormStartPosition.CenterParent;
+                    previewForm.ShowDialog(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao visualizar: {ex.Message}");
+            }
+        }
     }
 }

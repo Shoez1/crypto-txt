@@ -7,6 +7,7 @@ namespace CryptoTxt
         private System.Windows.Forms.Button btnSelectFile;
         private System.Windows.Forms.Button btnEncrypt;
         private System.Windows.Forms.Button btnDecrypt;
+        private System.Windows.Forms.Button btnPreview;
 
         protected override void Dispose(bool disposing)
         {
@@ -23,6 +24,7 @@ namespace CryptoTxt
             this.btnSelectFile = new System.Windows.Forms.Button();
             this.btnEncrypt = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
+            this.btnPreview = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // txtFilePath
@@ -62,11 +64,22 @@ namespace CryptoTxt
             this.btnDecrypt.UseVisualStyleBackColor = true;
             this.btnDecrypt.Click += new System.EventHandler(this.btnDecrypt_Click);
             // 
+            // btnPreview
+            // 
+            this.btnPreview.Location = new System.Drawing.Point(20, 100);
+            this.btnPreview.Name = "btnPreview";
+            this.btnPreview.Size = new System.Drawing.Size(350, 30);
+            this.btnPreview.TabIndex = 4;
+            this.btnPreview.Text = "Visualizar Conteúdo";
+            this.btnPreview.UseVisualStyleBackColor = true;
+            this.btnPreview.Click += new System.EventHandler(this.btnPreview_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(390, 110);
+            this.ClientSize = new System.Drawing.Size(390, 150);
+            this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDecrypt);
             this.Controls.Add(this.btnEncrypt);
             this.Controls.Add(this.btnSelectFile);
