@@ -15,6 +15,7 @@ CryptoTxt é um utilitário moderno para Windows que permite criptografar e desc
 Edite o arquivo `login.txt` na raiz do projeto antes de compilar. Exemplo:
 ```
 admin:123456
++dicadesenha: sua dica aqui
 ```
 
 ### 2. (Opcional) Troque a chave de criptografia

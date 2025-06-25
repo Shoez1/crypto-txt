@@ -10,11 +10,16 @@ namespace CryptoTxt
     {
         private string validUser = null;
         private string validPass = null;
+        private string senhaHint = null;
 
         public LoginForm()
         {
             InitializeComponent();
             LoadLoginInfo();
+            if (!string.IsNullOrEmpty(senhaHint))
+                lblHint.Text = $"Dica de senha: {senhaHint}";
+            else
+                lblHint.Text = string.Empty;
         }
 
         private void LoadLoginInfo()
@@ -39,14 +44,27 @@ namespace CryptoTxt
             using (var stream = assembly.GetManifestResourceStream(resourceName))
             using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
-                var line = reader.ReadLine();
-                if (!string.IsNullOrEmpty(line) && line.Contains(":"))
+                string line;
+                bool foundLogin = false;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    var parts = line.Split(':');
-                    validUser = parts[0];
-                    validPass = parts[1];
+                    if (!foundLogin && !string.IsNullOrEmpty(line) && line.Contains(":"))
+                    {
+                        var parts = line.Split(':');
+                        if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]) && !string.IsNullOrWhiteSpace(parts[1]))
+                        {
+                            validUser = parts[0];
+                            validPass = parts[1];
+                            foundLogin = true;
+                            continue;
+                        }
+                    }
+                    if (line.StartsWith("dicadesenha:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        senhaHint = line.Substring("dicadesenha:".Length).Trim();
+                    }
                 }
-                else
+                if (!foundLogin)
                 {
                     MessageBox.Show("Erro: login.txt embutido está vazio ou mal formatado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     Application.Exit();

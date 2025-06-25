@@ -8,6 +8,7 @@ namespace CryptoTxt
         private System.Windows.Forms.TextBox txtUser;
         private System.Windows.Forms.TextBox txtPass;
         private System.Windows.Forms.Button btnLogin;
+        private System.Windows.Forms.Label lblHint;
 
         protected override void Dispose(bool disposing)
         {
@@ -23,6 +24,7 @@ namespace CryptoTxt
             this.txtUser = new System.Windows.Forms.TextBox();
             this.txtPass = new System.Windows.Forms.TextBox();
             this.btnLogin = new System.Windows.Forms.Button();
+            this.lblHint = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // lblUser
@@ -68,6 +70,15 @@ namespace CryptoTxt
             this.btnLogin.UseVisualStyleBackColor = true;
             this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
             // 
+            // lblHint
+            // 
+            this.lblHint.AutoSize = true;
+            this.lblHint.Location = new System.Drawing.Point(30, 85);
+            this.lblHint.Name = "lblHint";
+            this.lblHint.Size = new System.Drawing.Size(0, 13);
+            this.lblHint.TabIndex = 5;
+            this.lblHint.ForeColor = System.Drawing.Color.Gray;
+            // 
             // LoginForm
             // 
             this.AcceptButton = this.btnLogin;
@@ -79,6 +90,7 @@ namespace CryptoTxt
             this.Controls.Add(this.txtUser);
             this.Controls.Add(this.lblPass);
             this.Controls.Add(this.lblUser);
+            this.Controls.Add(this.lblHint);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
