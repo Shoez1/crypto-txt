@@ -88,6 +88,9 @@ namespace CryptoTxt
             this.Controls.Add(this.btnSelectFile);
             this.Controls.Add(this.txtFilePath);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.AllowDrop = true;
+            this.DragEnter += new System.Windows.Forms.DragEventHandler(this.MainForm_DragEnter);
+            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.MainForm_DragDrop);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "MainForm";
