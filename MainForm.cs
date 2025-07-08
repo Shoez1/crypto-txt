@@ -120,5 +120,25 @@ namespace CryptoTxt
                 MessageBox.Show($"Erro ao visualizar: {ex.Message}");
             }
         }
+
+        private void txtFilePath_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.Copy;
+            else
+                e.Effect = DragDropEffects.None;
+        }
+
+        private void txtFilePath_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    txtFilePath.Text = files[0];
+                }
+            }
+        }
     }
 }

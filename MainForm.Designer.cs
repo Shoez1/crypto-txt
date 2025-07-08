@@ -25,6 +25,9 @@ namespace CryptoTxt
             this.btnEncrypt = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
             this.btnPreview = new System.Windows.Forms.Button();
+            this.txtFilePath.AllowDrop = true;
+            this.txtFilePath.DragEnter += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragEnter);
+            this.txtFilePath.DragDrop += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragDrop);
             this.SuspendLayout();
             // 
             // txtFilePath
