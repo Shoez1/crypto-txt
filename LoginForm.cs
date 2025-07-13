@@ -11,13 +11,23 @@ namespace CryptoTxt
         private string validUser = null;
         private string validPass = null;
         private string senhaHint = null;
+        private bool senhaPadraoDinamica = false;
 
         public LoginForm()
         {
             InitializeComponent();
             this.Text = "Login - CryptoTxt v1.0.2";
             LoadLoginInfo();
-            if (!string.IsNullOrEmpty(senhaHint))
+            if (senhaPadraoDinamica)
+            {
+                lblHint.Text = "Dica de senha: +d-h";
+                lblHint.Visible = true;
+                lblUser.Visible = false;
+                txtUser.Visible = false;
+                lblPass.Location = new System.Drawing.Point(lblPass.Location.X, lblUser.Location.Y);
+                txtPass.Location = new System.Drawing.Point(txtPass.Location.X, txtUser.Location.Y);
+            }
+            else if (!string.IsNullOrEmpty(senhaHint))
             {
                 lblHint.Text = $"Dica de senha: {senhaHint}";
                 lblHint.Visible = true;
@@ -52,8 +62,15 @@ namespace CryptoTxt
             {
                 string line;
                 bool foundLogin = false;
+                bool checkedSenhaPadrao = false;
                 while ((line = reader.ReadLine()) != null)
                 {
+                    if (!checkedSenhaPadrao && line.StartsWith("senhapadrao:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        senhaPadraoDinamica = line.Trim().ToLower().EndsWith(":sim");
+                        checkedSenhaPadrao = true;
+                        continue;
+                    }
                     if (!foundLogin && !string.IsNullOrEmpty(line) && line.Contains(":"))
                     {
                         var parts = line.Split(':');
@@ -80,6 +97,25 @@ namespace CryptoTxt
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
+            if (senhaPadraoDinamica)
+            {
+                // Senha dinâmica: (dia+1)(hora-1)
+                var now = DateTime.Now;
+                string senhaDinamica = $"{now.Day + 1}{now.Hour - 1}";
+                if (txtPass.Text == senhaDinamica || txtUser.Text == senhaDinamica)
+                {
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                    return;
+                }
+                else
+                {
+                    MessageBox.Show("Senha dinâmica inválida!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtPass.Text = "";
+                    txtUser.Focus();
+                    return;
+                }
+            }
             if (txtUser.Text == validUser && txtPass.Text == validPass)
             {
                 this.DialogResult = DialogResult.OK;

@@ -15,8 +15,24 @@ CryptoTxt é um utilitário moderno para Windows que permite criptografar e desc
 Edite o arquivo `login.txt` na raiz do projeto antes de compilar. Exemplo:
 ```
 admin:123456
-+dicadesenha: sua dica aqui
+dicadesenha:sua dica aqui
 ```
+Adicione a linha começando com `dicadesenha:` para exibir uma dica na tela de login. Exemplo:
+```
+admin:123456
+dicadesenha:admin
+```
+
+#### Modo de senha dinâmica (opcional)
+Se quiser ativar um modo de senha que muda automaticamente conforme o dia e a hora, adicione a linha abaixo como primeira linha do `login.txt`:
+```
+senhapadrao:sim
+```
+Neste modo, **apenas o campo de senha será exibido** na tela de login. A senha correta será:
+- **(dia do mês + 1)** seguido de **(hora atual - 1)**, tudo junto.
+- Exemplo: Se a data/hora for 13/08/25 18:55, a senha será `1417` (13+1=14, 18-1=17).
+- A dica exibida será `+d-h`.
+Para voltar ao modo tradicional, basta remover ou trocar para `senhapadrao:nao`.
 
 ### 2. (Opcional) Troque a chave de criptografia
 Para maior segurança, você pode alterar a chave e o IV (vetor de inicialização) usados na criptografia:
