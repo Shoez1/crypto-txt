@@ -1,3 +1,4 @@
+debug:nao
 senhapadrao:sim
 admin:123456
 dicadesenha:exemplo
