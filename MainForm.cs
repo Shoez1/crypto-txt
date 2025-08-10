@@ -66,15 +66,15 @@ namespace CryptoTxt
                 string outputPath;
                 if (originalPath.EndsWith(".txt.enc", StringComparison.OrdinalIgnoreCase))
                 {
-                    outputPath = originalPath.Substring(0, originalPath.Length - 8) + ".decrypted.txt";
+                    outputPath = originalPath.Substring(0, originalPath.Length - 4); // Remove apenas .enc
                 }
                 else if (originalPath.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
                 {
-                    outputPath = originalPath.Substring(0, originalPath.Length - 4) + ".decrypted.txt";
+                    outputPath = originalPath.Substring(0, originalPath.Length - 4); // Remove apenas .enc
                 }
                 else
                 {
-                    outputPath = originalPath + ".decrypted.txt";
+                    outputPath = originalPath + ".txt";
                 }
                 File.WriteAllText(outputPath, plainText);
                 MessageBox.Show($"Arquivo descriptografado com sucesso!\nSalvo como: {outputPath}");
