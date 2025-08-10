@@ -8,6 +8,7 @@ namespace CryptoTxt
         private System.Windows.Forms.Button btnEncrypt;
         private System.Windows.Forms.Button btnDecrypt;
         private System.Windows.Forms.Button btnPreview;
+        private System.Windows.Forms.Label lblVersion;
 
         protected override void Dispose(bool disposing)
         {
@@ -25,6 +26,7 @@ namespace CryptoTxt
             this.btnEncrypt = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
             this.btnPreview = new System.Windows.Forms.Button();
+            this.lblVersion = new System.Windows.Forms.Label();
             this.txtFilePath.AllowDrop = true;
             this.txtFilePath.DragEnter += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragEnter);
             this.txtFilePath.DragDrop += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragDrop);
@@ -77,11 +79,22 @@ namespace CryptoTxt
             this.btnPreview.UseVisualStyleBackColor = true;
             this.btnPreview.Click += new System.EventHandler(this.btnPreview_Click);
             // 
+            // lblVersion
+            // 
+            this.lblVersion.AutoSize = true;
+            this.lblVersion.Location = new System.Drawing.Point(10, 5);
+            this.lblVersion.Name = "lblVersion";
+            this.lblVersion.Size = new System.Drawing.Size(100, 13);
+            this.lblVersion.TabIndex = 5;
+            this.lblVersion.Text = "Versão: --";
+            this.lblVersion.ForeColor = System.Drawing.Color.DarkGray;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(390, 150);
+            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDecrypt);
             this.Controls.Add(this.btnEncrypt);

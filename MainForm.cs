@@ -9,6 +9,9 @@ namespace CryptoTxt
         public MainForm()
         {
             InitializeComponent();
+            var version = "1.2";
+            this.Text = $"CryptoTxt - v{version}";
+            lblVersion.Text = string.Empty;
         }
 
         private void btnSelectFile_Click(object sender, EventArgs e)
@@ -25,7 +28,7 @@ namespace CryptoTxt
 
         private void btnEncrypt_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(txtFilePath.Text))
+            if (txtFilePath?.Text == null || !File.Exists(txtFilePath.Text))
             {
                 MessageBox.Show("Selecione um arquivo válido.");
                 return;
@@ -45,12 +48,12 @@ namespace CryptoTxt
 
         private void btnDecrypt_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(txtFilePath.Text))
+            if (txtFilePath?.Text == null || !File.Exists(txtFilePath.Text))
             {
                 MessageBox.Show("Selecione um arquivo válido.");
                 return;
             }
-            if (!txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
+            if (txtFilePath?.Text == null || !txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
             {
                 MessageBox.Show("Selecione um arquivo .enc para descriptografar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -76,20 +79,20 @@ namespace CryptoTxt
                 File.WriteAllText(outputPath, plainText);
                 MessageBox.Show($"Arquivo descriptografado com sucesso!\nSalvo como: {outputPath}");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                MessageBox.Show($"Erro ao descriptografar: {ex.Message}");
+                MessageBox.Show($"Erro ao descriptografar {txtFilePath.Text}: A chave padrão utilizada é diferente da chave usada para criptografar este arquivo.");
             }
         }
 
         private void btnPreview_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(txtFilePath.Text))
+            if (txtFilePath?.Text == null || !File.Exists(txtFilePath.Text))
             {
                 MessageBox.Show("Selecione um arquivo válido.");
                 return;
             }
-            if (!txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
+            if (txtFilePath?.Text == null || !txtFilePath.Text.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
             {
                 MessageBox.Show("Selecione um arquivo .enc para visualizar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -115,9 +118,9 @@ namespace CryptoTxt
                     previewForm.ShowDialog(this);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                MessageBox.Show($"Erro ao visualizar: {ex.Message}");
+                MessageBox.Show($"Erro ao visualizar {txtFilePath.Text}: A chave padrão utilizada é diferente da chave usada para criptografar este arquivo.");
             }
         }
 
@@ -136,7 +139,8 @@ namespace CryptoTxt
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length > 0)
                 {
-                    txtFilePath.Text = files[0];
+                    if (txtFilePath != null)
+                        txtFilePath.Text = files[0];
                 }
             }
         }
@@ -156,7 +160,8 @@ namespace CryptoTxt
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files.Length > 0)
                 {
-                    txtFilePath.Text = files[0];
+                    if (txtFilePath != null)
+                        txtFilePath.Text = files[0];
                 }
             }
         }

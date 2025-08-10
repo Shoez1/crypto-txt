@@ -8,15 +8,17 @@ namespace CryptoTxt
 {
     public partial class LoginForm : Form
     {
-        private string validUser = null;
-        private string validPass = null;
-        private string senhaHint = null;
+        private string validUser = string.Empty;
+        private string validPass = string.Empty;
+        private string senhaHint = string.Empty;
         private bool senhaPadraoDinamica = false;
 
         public LoginForm()
         {
             InitializeComponent();
-            this.Text = "Login - CryptoTxt v1.0.2";
+            var version = "1.2";
+            this.Text = $"Login - CryptoTxt v{version}";
+            lblVersion.Text = string.Empty;
             LoadLoginInfo();
             if (senhaPadraoDinamica)
             {
@@ -42,7 +44,7 @@ namespace CryptoTxt
         {
             // Lê login.txt como recurso embutido de forma robusta
             var assembly = Assembly.GetExecutingAssembly();
-            string resourceName = null;
+            string resourceName = string.Empty;
             foreach (var res in assembly.GetManifestResourceNames())
             {
                 if (res.EndsWith("login.txt", StringComparison.OrdinalIgnoreCase))
@@ -57,7 +59,14 @@ namespace CryptoTxt
                 Application.Exit();
                 return;
             }
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null)
+            {
+                MessageBox.Show("Erro: não foi possível abrir o recurso login.txt.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Application.Exit();
+                return;
+            }
+            using (stream)
             using (var reader = new StreamReader(stream, Encoding.UTF8))
             {
                 string line;
@@ -65,26 +74,35 @@ namespace CryptoTxt
                 bool checkedSenhaPadrao = false;
                 while ((line = reader.ReadLine()) != null)
                 {
+                    if (line.Trim().ToLower() == "debug:sim")
+                    {
+                        Program.DebugMode = true;
+                        return;
+                    }
                     if (!checkedSenhaPadrao && line.StartsWith("senhapadrao:", StringComparison.OrdinalIgnoreCase))
                     {
                         senhaPadraoDinamica = line.Trim().ToLower().EndsWith(":sim");
                         checkedSenhaPadrao = true;
                         continue;
                     }
-                    if (!foundLogin && !string.IsNullOrEmpty(line) && line.Contains(":"))
-                    {
-                        var parts = line.Split(':');
+                    if (!foundLogin && !string.IsNullOrEmpty(line) && line.Contains(":")
+                        && !line.Trim().ToLower().StartsWith("debug:")
+                        && !line.Trim().ToLower().StartsWith("senhapadrao:")
+                        && !line.Trim().ToLower().StartsWith("dicadesenha:")
+                    )
+                {
+                    var parts = line.Split(':');
                         if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]) && !string.IsNullOrWhiteSpace(parts[1]))
                         {
-                            validUser = parts[0];
-                            validPass = parts[1];
+                    validUser = parts[0] ?? string.Empty;
+                    validPass = parts[1] ?? string.Empty;
                             foundLogin = true;
                             continue;
                         }
                     }
                     if (line.StartsWith("dicadesenha:", StringComparison.OrdinalIgnoreCase))
                     {
-                        senhaHint = line.Substring("dicadesenha:".Length).Trim();
+                        senhaHint = line.Substring("dicadesenha:".Length)?.Trim() ?? string.Empty;
                     }
                 }
                 if (!foundLogin)
