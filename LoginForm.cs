@@ -16,7 +16,7 @@ namespace CryptoTxt
         public LoginForm()
         {
             InitializeComponent();
-            var version = "1.2";
+            var version = "1.3";
             this.Text = $"Login - CryptoTxt v{version}";
             lblVersion.Text = string.Empty;
             LoadLoginInfo();

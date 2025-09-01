@@ -7,8 +7,9 @@ namespace CryptoTxt
         private System.Windows.Forms.Button btnSelectFile;
         private System.Windows.Forms.Button btnEncrypt;
         private System.Windows.Forms.Button btnDecrypt;
-        private System.Windows.Forms.Button btnPreview;
-        private System.Windows.Forms.Label lblVersion;
+        private System.Windows.Forms.Button btnExportKey;
+        private System.Windows.Forms.Button btnImportKey;
+        private System.Windows.Forms.ListBox lstArquivos;
 
         protected override void Dispose(bool disposing)
         {
@@ -25,8 +26,9 @@ namespace CryptoTxt
             this.btnSelectFile = new System.Windows.Forms.Button();
             this.btnEncrypt = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
-            this.btnPreview = new System.Windows.Forms.Button();
-            this.lblVersion = new System.Windows.Forms.Label();
+            this.btnExportKey = new System.Windows.Forms.Button();
+            this.btnImportKey = new System.Windows.Forms.Button();
+            this.lstArquivos = new System.Windows.Forms.ListBox();
             this.txtFilePath.AllowDrop = true;
             this.txtFilePath.DragEnter += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragEnter);
             this.txtFilePath.DragDrop += new System.Windows.Forms.DragEventHandler(this.txtFilePath_DragDrop);
@@ -69,33 +71,41 @@ namespace CryptoTxt
             this.btnDecrypt.UseVisualStyleBackColor = true;
             this.btnDecrypt.Click += new System.EventHandler(this.btnDecrypt_Click);
             // 
-            // btnPreview
+            // btnExportKey
             // 
-            this.btnPreview.Location = new System.Drawing.Point(20, 100);
-            this.btnPreview.Name = "btnPreview";
-            this.btnPreview.Size = new System.Drawing.Size(350, 30);
-            this.btnPreview.TabIndex = 4;
-            this.btnPreview.Text = "Visualizar Conteúdo";
-            this.btnPreview.UseVisualStyleBackColor = true;
-            this.btnPreview.Click += new System.EventHandler(this.btnPreview_Click);
+            this.btnExportKey.Location = new System.Drawing.Point(20, 100);
+            this.btnExportKey.Name = "btnExportKey";
+            this.btnExportKey.Size = new System.Drawing.Size(170, 30);
+            this.btnExportKey.TabIndex = 6;
+            this.btnExportKey.Text = "Exportar Chave";
+            this.btnExportKey.UseVisualStyleBackColor = true;
+            this.btnExportKey.Click += new System.EventHandler(this.btnExportKey_Click);
             // 
-            // lblVersion
+            // btnImportKey
             // 
-            this.lblVersion.AutoSize = true;
-            this.lblVersion.Location = new System.Drawing.Point(10, 5);
-            this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(100, 13);
-            this.lblVersion.TabIndex = 5;
-            this.lblVersion.Text = "Versão: --";
-            this.lblVersion.ForeColor = System.Drawing.Color.DarkGray;
+            this.btnImportKey.Location = new System.Drawing.Point(200, 100);
+            this.btnImportKey.Name = "btnImportKey";
+            this.btnImportKey.Size = new System.Drawing.Size(170, 30);
+            this.btnImportKey.TabIndex = 7;
+            this.btnImportKey.Text = "Importar Chave";
+            this.btnImportKey.UseVisualStyleBackColor = true;
+            this.btnImportKey.Click += new System.EventHandler(this.btnImportKey_Click);
+            // 
+            // lstArquivos
+            // 
+            this.lstArquivos.Name = "lstArquivos";
+            this.lstArquivos.Location = new System.Drawing.Point(20, 140);
+            this.lstArquivos.Size = new System.Drawing.Size(350, 140);
+            this.lstArquivos.TabIndex = 8;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(390, 150);
-            this.Controls.Add(this.lblVersion);
-            this.Controls.Add(this.btnPreview);
+            this.ClientSize = new System.Drawing.Size(390, 300);
+            this.Controls.Add(this.lstArquivos);
+            this.Controls.Add(this.btnImportKey);
+            this.Controls.Add(this.btnExportKey);
             this.Controls.Add(this.btnDecrypt);
             this.Controls.Add(this.btnEncrypt);
             this.Controls.Add(this.btnSelectFile);
