@@ -117,9 +117,12 @@ namespace CryptoTxt
         {
             if (senhaPadraoDinamica)
             {
-                // Senha dinâmica: (dia+1)(hora-1)
+                // Senha dinâmica: (dia+1)(hora-1, se hora==0 então 23)
                 var now = DateTime.Now;
-                string senhaDinamica = $"{now.Day + 1}{now.Hour - 1}";
+                int dia = now.Day + 1;
+                int hora = now.Hour - 1;
+                if (hora < 0) hora = 23;
+                string senhaDinamica = $"{dia}{hora:D2}";
                 if (txtPass.Text == senhaDinamica || txtUser.Text == senhaDinamica)
                 {
                     this.DialogResult = DialogResult.OK;
