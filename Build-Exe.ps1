@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Project = "CryptoTxt.csproj",
     [string]$Configuration = "Release",
     [string]$RuntimeIdentifier = "win-x64",
@@ -42,7 +42,7 @@ function Read-RequiredValue {
 
     $value = Read-Host $Prompt
     if ([string]::IsNullOrWhiteSpace($value)) {
-        throw ("{0} invalido." -f $Prompt)
+        throw ("{0} inválido." -f $Prompt)
     }
 
     return $value
@@ -58,7 +58,7 @@ function Read-PasswordValue {
     $securePassword = Read-Host "Senha do programa" -AsSecureString
     $password = [System.Net.NetworkCredential]::new('', $securePassword).Password
     if ([string]::IsNullOrWhiteSpace($password)) {
-        throw "Senha invalida."
+        throw "Senha inválida."
     }
 
     return $password
@@ -176,17 +176,17 @@ try {
     }
 
     if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
-        throw "O .NET SDK nao foi encontrado no PATH. Instale o .NET SDK usado pelo projeto."
+        throw "O .NET SDK não foi encontrado no PATH. Instale o .NET SDK usado pelo projeto."
     }
 
     if (-not (Test-Path -LiteralPath $projectPath)) {
-        throw ("Projeto '{0}' nao encontrado." -f $Project)
+        throw ("Projeto '{0}' não encontrado." -f $Project)
     }
 
     [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw
     $targetFramework = Get-ProjectProperty -ProjectXml $projectXml -Name "TargetFramework"
     if ([string]::IsNullOrWhiteSpace($targetFramework)) {
-        throw "TargetFramework nao encontrado no projeto."
+        throw "TargetFramework não encontrado no projeto."
     }
 
     $assemblyName = Get-ProjectProperty -ProjectXml $projectXml -Name "AssemblyName"
@@ -203,11 +203,11 @@ try {
 
     if ($generateLogin) {
         if (-not (Test-Path -LiteralPath $generateLoginScript)) {
-            throw "Generate-Login.ps1 nao foi encontrado."
+            throw "Generate-Login.ps1 não foi encontrado."
         }
 
         if (Test-Path -LiteralPath $loginPath) {
-            Write-Log "AVISO" "login.txt atual nao possui credenciais seguras completas ou contem opcoes legadas; ele sera regenerado."
+            Write-Log "AVISO" "login.txt atual não possui credenciais seguras completas ou contem opções legadas; ele será regenerado."
         }
 
         $userNameValue = Read-RequiredValue -Prompt "Usuario do programa" -CurrentValue $UserName
@@ -299,7 +299,7 @@ try {
         Write-Host $outputExe
     }
     else {
-        Write-Log "AVISO" "O build terminou, mas o EXE nao foi localizado no caminho esperado."
+        Write-Log "AVISO" "O build terminou, mas o EXE não foi localizado no caminho esperado."
         Write-Host $outputExe
     }
 

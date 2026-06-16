@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$OutputPath = "login.txt",
     [string]$UserName,
     [string]$PasswordPlaintext,
@@ -21,7 +21,7 @@ function Read-RequiredValue {
 
     $value = Read-Host $Prompt
     if ([string]::IsNullOrWhiteSpace($value)) {
-        throw "$Prompt invalido."
+        throw "$Prompt inválido."
     }
 
     return $value
@@ -37,7 +37,7 @@ function Read-PasswordValue {
     $securePassword = Read-Host "Senha do programa" -AsSecureString
     $password = [System.Net.NetworkCredential]::new('', $securePassword).Password
     if ([string]::IsNullOrWhiteSpace($password)) {
-        throw "Senha invalida."
+        throw "Senha inválida."
     }
 
     return $password

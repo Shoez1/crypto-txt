@@ -1,4 +1,4 @@
-namespace CryptoTxt
+﻿namespace CryptoTxt
 {
     partial class LoginForm
     {

@@ -1,5 +1,5 @@
-# Exemplo gerado por Generate-Login.ps1.
-# Nao copie estes placeholders para producao; execute build-exe.bat.
+﻿# Exemplo gerado por Generate-Login.ps1.
+# Não copie estes placeholders para produção; execute build-exe.bat.
 version:1.4
 usuario:seu_usuario
 salt:BASE64_DO_SALT
