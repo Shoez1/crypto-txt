@@ -1,153 +1,107 @@
 using System;
-using System.IO;
-using System.Reflection;
-using System.Text;
 using System.Windows.Forms;
+using CryptoTxt.Utils;
 
 namespace CryptoTxt
 {
     public partial class LoginForm : Form
     {
-        private string validUser = string.Empty;
-        private string validPass = string.Empty;
-        private string senhaHint = string.Empty;
-        private bool senhaPadraoDinamica = false;
+        private readonly LoginConfiguration loginConfiguration;
+        private readonly string defaultHintText;
+        private readonly bool defaultHintVisible;
+        private int failedAttempts;
+        private DateTime lockoutUntilUtc = DateTime.MinValue;
 
         public LoginForm()
         {
             InitializeComponent();
-            var version = "1.3";
-            this.Text = $"Login - CryptoTxt v{version}";
+            Text = $"Login - CryptoTxt v{AppInfo.Version}";
             lblVersion.Text = string.Empty;
-            LoadLoginInfo();
-            if (senhaPadraoDinamica)
+
+            try
             {
-                lblHint.Text = "Dica de senha: +d-h";
-                lblHint.Visible = true;
-                lblUser.Visible = false;
-                txtUser.Visible = false;
-                lblPass.Location = new System.Drawing.Point(lblPass.Location.X, lblUser.Location.Y);
-                txtPass.Location = new System.Drawing.Point(txtPass.Location.X, txtUser.Location.Y);
+                loginConfiguration = LoginConfigurationLoader.LoadFromEmbeddedResource();
             }
-            else if (!string.IsNullOrEmpty(senhaHint))
+            catch (Exception ex)
             {
-                lblHint.Text = $"Dica de senha: {senhaHint}";
-                lblHint.Visible = true;
+                MessageBox.Show($"Configuração de login inválida: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                throw;
             }
-            else
-            {
-                lblHint.Visible = false;
-            }
+
+            ApplyLoginConfiguration();
+            defaultHintText = lblHint.Text;
+            defaultHintVisible = lblHint.Visible;
         }
 
-        private void LoadLoginInfo()
+        private void ApplyLoginConfiguration()
         {
-            // Lê login.txt como recurso embutido de forma robusta
-            var assembly = Assembly.GetExecutingAssembly();
-            string resourceName = string.Empty;
-            foreach (var res in assembly.GetManifestResourceNames())
+            if (!string.IsNullOrEmpty(loginConfiguration.Hint))
             {
-                if (res.EndsWith("login.txt", StringComparison.OrdinalIgnoreCase))
-                {
-                    resourceName = res;
-                    break;
-                }
-            }
-            if (resourceName == null)
-            {
-                MessageBox.Show("Erro: login.txt não encontrado como recurso embutido.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
+                lblHint.Text = $"Dica de senha: {loginConfiguration.Hint}";
+                lblHint.Visible = true;
                 return;
             }
-            var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
+
+            lblHint.Visible = false;
+        }
+
+        private async void ApplyLockoutAsync()
+        {
+            btnLogin.Enabled = false;
+
+            while (DateTime.UtcNow < lockoutUntilUtc)
             {
-                MessageBox.Show("Erro: não foi possível abrir o recurso login.txt.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
+                TimeSpan remaining = lockoutUntilUtc - DateTime.UtcNow;
+                lblHint.Text = $"Muitas tentativas. Aguarde {Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds))}s.";
+                lblHint.Visible = true;
+                await System.Threading.Tasks.Task.Delay(1000);
+            }
+
+            btnLogin.Enabled = true;
+            lblHint.Text = defaultHintText;
+            lblHint.Visible = defaultHintVisible;
+        }
+
+        private void RegisterFailure(string message)
+        {
+            failedAttempts++;
+            txtPass.Text = string.Empty;
+            txtUser.Focus();
+
+            if (failedAttempts >= 5)
+            {
+                failedAttempts = 0;
+                lockoutUntilUtc = DateTime.UtcNow.AddSeconds(15);
+                MessageBox.Show($"{message}\n\nO login foi bloqueado por 15 segundos.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ApplyLockoutAsync();
                 return;
             }
-            using (stream)
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
-            {
-                string line;
-                bool foundLogin = false;
-                bool checkedSenhaPadrao = false;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (line.Trim().ToLower() == "debug:sim")
-                    {
-                        Program.DebugMode = true;
-                        return;
-                    }
-                    if (!checkedSenhaPadrao && line.StartsWith("senhapadrao:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        senhaPadraoDinamica = line.Trim().ToLower().EndsWith(":sim");
-                        checkedSenhaPadrao = true;
-                        continue;
-                    }
-                    if (!foundLogin && !string.IsNullOrEmpty(line) && line.Contains(":")
-                        && !line.Trim().ToLower().StartsWith("debug:")
-                        && !line.Trim().ToLower().StartsWith("senhapadrao:")
-                        && !line.Trim().ToLower().StartsWith("dicadesenha:")
-                    )
-                {
-                    var parts = line.Split(':');
-                        if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]) && !string.IsNullOrWhiteSpace(parts[1]))
-                        {
-                    validUser = parts[0] ?? string.Empty;
-                    validPass = parts[1] ?? string.Empty;
-                            foundLogin = true;
-                            continue;
-                        }
-                    }
-                    if (line.StartsWith("dicadesenha:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        senhaHint = line.Substring("dicadesenha:".Length)?.Trim() ?? string.Empty;
-                    }
-                }
-                if (!foundLogin)
-                {
-                    MessageBox.Show("Erro: login.txt embutido está vazio ou mal formatado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Application.Exit();
-                }
-            }
+
+            MessageBox.Show(message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
-            if (senhaPadraoDinamica)
+            if (DateTime.UtcNow < lockoutUntilUtc)
             {
-                // Senha dinâmica: (dia+1)(hora-1, se hora==0 então 23)
-                var now = DateTime.Now;
-                int dia = now.Day + 1;
-                int hora = now.Hour - 1;
-                if (hora < 0) hora = 23;
-                string senhaDinamica = $"{dia}{hora:D2}";
-                if (txtPass.Text == senhaDinamica || txtUser.Text == senhaDinamica)
-                {
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                    return;
-                }
-                else
-                {
-                    MessageBox.Show("Senha dinâmica inválida!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    txtPass.Text = "";
-                    txtUser.Focus();
-                    return;
-                }
+                TimeSpan remaining = lockoutUntilUtc - DateTime.UtcNow;
+                MessageBox.Show(
+                    $"Muitas tentativas de login. Aguarde {Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds))} segundos.",
+                    "Proteção",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
             }
-            if (txtUser.Text == validUser && txtPass.Text == validPass)
+
+            if (loginConfiguration.ValidateCredentials(txtUser.Text, txtPass.Text))
             {
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                failedAttempts = 0;
+                DialogResult = DialogResult.OK;
+                Close();
+                return;
             }
-            else
-            {
-                MessageBox.Show("Usuário ou senha inválidos!", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtPass.Text = "";
-                txtUser.Focus();
-            }
+
+            RegisterFailure("Usuário ou senha inválidos!");
         }
     }
 }

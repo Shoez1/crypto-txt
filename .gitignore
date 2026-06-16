@@ -21,5 +21,7 @@ Thumbs.db
 *.tmp
 *.bak
 
-# Não ignore o login.txt, crypt.ico, README.md, nem arquivos de código/projeto
+# Arquivos sensíveis/gerados localmente
 login.txt
+chave_crypto*.txt
+*.key

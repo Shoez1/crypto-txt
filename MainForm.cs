@@ -9,8 +9,7 @@ namespace CryptoTxt
         public MainForm()
         {
             InitializeComponent();
-            var version = "1.3";
-            this.Text = $"CryptoTxt - v{version}";
+            this.Text = $"CryptoTxt - v{AppInfo.Version}";
             if (this.Controls["lstArquivos"] is ListBox lst)
                 lst.DoubleClick += lstArquivos_DoubleClick;
         }
@@ -36,7 +35,24 @@ namespace CryptoTxt
             }
         }
 
-        private void btnSelectFile_Click(object sender, EventArgs e)
+        private static string GetAvailablePath(string desiredPath)
+        {
+            if (!File.Exists(desiredPath))
+                return desiredPath;
+
+            string directory = Path.GetDirectoryName(desiredPath) ?? string.Empty;
+            string fileName = Path.GetFileNameWithoutExtension(desiredPath);
+            string extension = Path.GetExtension(desiredPath);
+
+            for (int index = 1; ; index++)
+            {
+                string candidate = Path.Combine(directory, $"{fileName} ({index}){extension}");
+                if (!File.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        private void btnSelectFile_Click(object? sender, EventArgs e)
         {
             using (var selectType = new SelectTypeForm())
             {
@@ -70,7 +86,7 @@ namespace CryptoTxt
             }
         }
 
-        private void btnEncrypt_Click(object sender, EventArgs e)
+        private void btnEncrypt_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtFilePath?.Text))
             {
@@ -84,8 +100,9 @@ namespace CryptoTxt
                 {
                     string plainText = File.ReadAllText(txtFilePath.Text);
                     string encrypted = Utils.CryptoUtils.Encrypt(plainText);
-                    File.WriteAllText(txtFilePath.Text + ".enc", encrypted);
-                    MessageBox.Show("Arquivo criptografado com sucesso!");
+                    string outputPath = GetAvailablePath(txtFilePath.Text + ".enc");
+                    File.WriteAllText(outputPath, encrypted);
+                    MessageBox.Show($"Arquivo criptografado com sucesso!\nSalvo como: {outputPath}");
                 }
                 catch (Exception ex)
                 {
@@ -108,7 +125,7 @@ namespace CryptoTxt
                     {
                         string plainText = File.ReadAllText(file);
                         string encrypted = Utils.CryptoUtils.Encrypt(plainText);
-                        File.WriteAllText(file + ".enc", encrypted);
+                        File.WriteAllText(GetAvailablePath(file + ".enc"), encrypted);
                         count++;
                     }
                     MessageBox.Show($"{count} arquivos .txt criptografados com sucesso!");
@@ -124,7 +141,7 @@ namespace CryptoTxt
             }
         }
 
-        private void btnDecrypt_Click(object sender, EventArgs e)
+        private void btnDecrypt_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtFilePath?.Text))
             {
@@ -149,7 +166,7 @@ namespace CryptoTxt
                     }
                     catch
                     {
-                        MessageBox.Show("Não foi possível descriptografar. A chave utilizada é diferente da chave usada para criptografar este arquivo.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("Não foi possível descriptografar. A chave pode estar incorreta ou o arquivo pode ter sido alterado.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
                     string originalPath = txtFilePath.Text;
@@ -166,6 +183,7 @@ namespace CryptoTxt
                     {
                         outputPath = originalPath + ".txt";
                     }
+                    outputPath = GetAvailablePath(outputPath);
                     File.WriteAllText(outputPath, plainText);
                     MessageBox.Show($"Arquivo descriptografado com sucesso!\nSalvo como: {outputPath}");
                 }
@@ -204,7 +222,7 @@ namespace CryptoTxt
                                 outputPath = Path.Combine(pastaDestino, nomeArquivo);
                             else
                                 outputPath = Path.Combine(pastaDestino, nomeArquivo + ".txt");
-                            File.WriteAllText(outputPath, plainText);
+                            File.WriteAllText(GetAvailablePath(outputPath), plainText);
                             count++;
                         }
                         catch
@@ -228,7 +246,7 @@ namespace CryptoTxt
             }
         }
 
-        private void btnPreview_Click(object sender, EventArgs e)
+        private void btnPreview_Click(object? sender, EventArgs e)
         {
             if (txtFilePath?.Text == null || !File.Exists(txtFilePath.Text))
             {
@@ -263,11 +281,11 @@ namespace CryptoTxt
             }
             catch (Exception)
             {
-                MessageBox.Show($"Erro ao visualizar {txtFilePath.Text}: A chave padrão utilizada é diferente da chave usada para criptografar este arquivo.");
+                MessageBox.Show($"Erro ao visualizar {txtFilePath.Text}: a chave pode estar incorreta ou o arquivo pode ter sido alterado.");
             }
         }
 
-        private void btnExportKey_Click(object sender, EventArgs e)
+        private void btnExportKey_Click(object? sender, EventArgs e)
         {
             var sfd = new SaveFileDialog();
             sfd.Filter = "Arquivo de Chave (*.txt)|*.txt";
@@ -278,8 +296,7 @@ namespace CryptoTxt
                 try
                 {
                     Utils.CryptoUtils.ExportKeyAndIV(sfd.FileName);
-                    string base64 = System.IO.File.ReadAllText(sfd.FileName);
-                    MessageBox.Show($"Chave exportada com sucesso em formato Base64!\n\n{base64}", "Exportar Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Chave exportada com sucesso. Guarde esse arquivo em local seguro; ele não será exibido na tela.", "Exportar Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
@@ -288,7 +305,7 @@ namespace CryptoTxt
             }
         }
 
-        private void btnImportKey_Click(object sender, EventArgs e)
+        private void btnImportKey_Click(object? sender, EventArgs e)
         {
             // Se já está importada, desativa
             if (Utils.CryptoUtils.IsCustomKeyActive)
@@ -296,7 +313,7 @@ namespace CryptoTxt
                 Utils.CryptoUtils.ClearImportedKeyAndIV();
                 btnImportKey.Text = "Importar Chave";
                 btnImportKey.BackColor = System.Drawing.Color.LightGray;
-                MessageBox.Show("Chave importada desativada. O programa voltou a usar a chave padrão.", "Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Chave importada desativada. O programa voltou a usar a chave local protegida do usuário atual.", "Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             var ofd = new OpenFileDialog();
@@ -320,54 +337,55 @@ namespace CryptoTxt
             }
         }
 
-        private void txtFilePath_DragEnter(object sender, DragEventArgs e)
+        private void txtFilePath_DragEnter(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
                 e.Effect = DragDropEffects.Copy;
             else
                 e.Effect = DragDropEffects.None;
         }
 
-        private void txtFilePath_DragDrop(object sender, DragEventArgs e)
+        private void txtFilePath_DragDrop(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files.Length > 0)
+                if (txtFilePath != null)
                 {
-                    if (txtFilePath != null)
-                        txtFilePath.Text = files[0];
+                    txtFilePath.Text = files[0];
+                    AtualizarListaArquivosPasta(files[0]);
                 }
             }
         }
 
-        private void MainForm_DragEnter(object sender, DragEventArgs e)
+        private void MainForm_DragEnter(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
                 e.Effect = DragDropEffects.Copy;
             else
                 e.Effect = DragDropEffects.None;
         }
 
-        private void MainForm_DragDrop(object sender, DragEventArgs e)
+        private void MainForm_DragDrop(object? sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files.Length > 0)
+                if (txtFilePath != null)
                 {
-                    if (txtFilePath != null)
-                        txtFilePath.Text = files[0];
+                    txtFilePath.Text = files[0];
+                    AtualizarListaArquivosPasta(files[0]);
                 }
             }
         }
 
-        private void lstArquivos_DoubleClick(object sender, EventArgs e)
+        private void lstArquivos_DoubleClick(object? sender, EventArgs e)
         {
             if (this.Controls["lstArquivos"] is ListBox lst && lst.SelectedItem != null)
             {
-                string basePath = txtFilePath.Text;
-                string nomeArquivo = lst.SelectedItem.ToString();
+                string basePath = txtFilePath.Text ?? string.Empty;
+                string? nomeArquivo = lst.SelectedItem.ToString();
+                if (string.IsNullOrWhiteSpace(nomeArquivo))
+                    return;
+
                 string caminhoCompleto = Directory.Exists(basePath)
                     ? Path.Combine(basePath, nomeArquivo)
                     : basePath;
@@ -383,7 +401,7 @@ namespace CryptoTxt
                         }
                         catch
                         {
-                            MessageBox.Show("Não foi possível descriptografar. A chave utilizada é diferente da chave usada para criptografar este arquivo.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Não foi possível descriptografar. A chave pode estar incorreta ou o arquivo pode ter sido alterado.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
                         using (var previewForm = new Form())
@@ -438,7 +456,7 @@ namespace CryptoTxt
             }
             catch (Exception)
             {
-                MessageBox.Show($"Erro ao visualizar {Path.GetFileName(caminho)}: A chave padrão utilizada é diferente da chave usada para criptografar este arquivo.");
+                MessageBox.Show($"Erro ao visualizar {Path.GetFileName(caminho)}: a chave pode estar incorreta ou o arquivo pode ter sido alterado.");
             }
         }
     }

@@ -1,4 +1,6 @@
-debug:nao
-senhapadrao:sim
-admin:123456
-dicadesenha:exemplo
+version:1.4
+usuario:root
+salt:dFWt+s7nuoBp2LiTnEq2CQ==
+senhahash:p6gm5gr+Fjau9B+/mfd47Ky1sIK24q+gUZ3wjyvJcww=
+iteracoes:310000
+dicadesenha:r...A
