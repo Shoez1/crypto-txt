@@ -16,7 +16,6 @@ namespace CryptoTxt
         {
             InitializeComponent();
             Text = $"Login - CryptoTxt v{AppInfo.Version}";
-            lblVersion.Text = $"v{AppInfo.Version}";
 
             try
             {

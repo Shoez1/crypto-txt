@@ -10,7 +10,6 @@ namespace CryptoTxt
         private System.Windows.Forms.CheckBox chkShowPass;
         private System.Windows.Forms.Button btnLogin;
         private System.Windows.Forms.Label lblHint;
-        private System.Windows.Forms.Label lblVersion;
 
         protected override void Dispose(bool disposing)
         {
@@ -28,7 +27,6 @@ namespace CryptoTxt
             this.chkShowPass = new System.Windows.Forms.CheckBox();
             this.btnLogin = new System.Windows.Forms.Button();
             this.lblHint = new System.Windows.Forms.Label();
-            this.lblVersion = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // lblUser
@@ -97,23 +95,12 @@ namespace CryptoTxt
             this.lblHint.TabIndex = 6;
             this.lblHint.ForeColor = System.Drawing.Color.Gray;
             // 
-            // lblVersion
-            // 
-            this.lblVersion.AutoSize = true;
-            this.lblVersion.Location = new System.Drawing.Point(10, 5);
-            this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(100, 13);
-            this.lblVersion.TabIndex = 7;
-            this.lblVersion.Text = "Versão: --";
-            this.lblVersion.ForeColor = System.Drawing.Color.DarkGray;
-            // 
             // LoginForm
             // 
             this.AcceptButton = this.btnLogin;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(280, 190);
-            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.chkShowPass);
             this.Controls.Add(this.btnLogin);
             this.Controls.Add(this.txtPass);
