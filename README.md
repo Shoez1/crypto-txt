@@ -1,4 +1,4 @@
-﻿# CryptoTxt
+# CryptoTxt
 
 CryptoTxt é um utilitário Windows Forms exclusivo para criptografar e descriptografar arquivos de texto `.txt`.
 
@@ -10,6 +10,10 @@ CryptoTxt é um utilitário Windows Forms exclusivo para criptografar e descript
 - A chave padrão é embutida no executável e é a mesma em CryptoFotos, CryptoMulti e CryptoTxt.
 - Exportação/importação de chave usa somente o padrão `CSK3`, sem senha no arquivo de chave.
 - A interface e as validações aceitam apenas `.txt` para criptografar e `.txt.enc` para descriptografar/visualizar.
+- **Anti-debug profundo** no EXE de Release: `Debugger.IsAttached`, `IsDebuggerPresent`, `CheckRemoteDebuggerPresent`, `NtQueryInformationProcess` (debug port/object/flags), flags `BeingDebugged`/`NtGlobalFlag` do PEB e hardware breakpoints (DR0–DR3), além de verificação de janelas/processos de depuradores. Rodado no startup e em thread watchdog com intervalos aleatórios.
+- **Anti-tamper**: o EXE publicado carrega no final uma assinatura RSA-2048 (overlay `CTXSIGN1`) gerada **a cada build**. Em runtime o `IntegrityGuard` verifica a assinatura do próprio executável contra a chave pública embutida, e o watchdog confere periodicamente. O mesmo bypass por patch + reempacotamento do bundle passa a ser detectado (o exe encerra).
+- Modo **auto-pin** (fallback): builds não assinados (ex.: `dotnet build` de dev) gravam a hash SHA-256 do EXE em `%LOCALAPPDATA%\CryptoTxt\integrity.dat` no primeiro uso e rejeitam divergências depois.
+- Nota: estas camadas são **deterrência/atrito**, não proteção absoluta — um atacante com tempo e acesso ao binário sempre pode removê-las. A confiança real dos dados continua nas chaves de criptografia (veja "Chaves").
 
 ## Build Portátil
 
@@ -23,8 +27,12 @@ O script:
 
 1. Gera ou atualiza `login.txt` com hash seguro.
 2. Executa `dotnet restore`.
-3. Publica um EXE single-file self-contained em `bin\Release\net10.0-windows\win-x64\publish\CryptoTxt.exe`.
-4. Salva o log em `build-exe.log`.
+3. Gera um par de chaves RSA-2048 **novo a cada build**, escreve `Security/IntegrityToken.g.cs` com a chave pública e executa `dotnet publish` (single-file self-contained).
+4. Assina o EXE produzido (SHA-256 + RSA) e acrescenta o overlay `CTXSIGN1` no final do arquivo.
+5. Restaura `Security/IntegrityToken.g.cs` para o stub de desenvolvimento (nenhum segredo fica no repositório).
+6. Salva o log em `build-exe.log`.
+
+> Builds feitos com `dotnet build`/`dotnet publish` diretos **não** assinam o EXE (o token fica vazio) e o app usa o modo auto-pin. Use `build-exe.bat` para distribuir EXE com assinatura de integridade.
 
 Para rodar sem pausa final:
 
@@ -69,3 +77,12 @@ As opções antigas `debug:` e `senhapadrao:` foram removidas por segurança.
 - `Gerar Chave` cria uma chave totalmente nova, carrega essa chave na sessão atual e permite exportá-la em seguida.
 - A mesma chave funciona em CryptoFotos, CryptoMulti e CryptoTxt.
 - Guarde chaves exportadas fora do repositório e não compartilhe junto com arquivos criptografados.
+
+## Testes Automatizados
+
+Para executar a suíte de testes unitários:
+
+```bash
+dotnet test tests/CryptoTxt.Tests/CryptoTxt.Tests.csproj
+```
+

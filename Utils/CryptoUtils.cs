@@ -11,6 +11,46 @@ namespace CryptoTxt.Utils
 
         public static bool IsCustomKeyActive => importedKey != null && importedIV != null;
 
+        public static string ActiveKeyDescription => IsCustomKeyActive
+            ? "Chave Personalizada (CSK3)"
+            : "Chave Padrão (Compartilhada)";
+
+        public static void EncryptFile(string sourceFilePath, string targetFilePath)
+        {
+            byte[] plainBytes = File.ReadAllBytes(sourceFilePath);
+            byte[]? cipherBytes = null;
+
+            try
+            {
+                cipherBytes = EncryptBytes(plainBytes);
+                string base64 = Convert.ToBase64String(cipherBytes);
+                File.WriteAllText(targetFilePath, base64, new UTF8Encoding(false));
+            }
+            finally
+            {
+                ClearSensitiveBytes(plainBytes);
+                ClearSensitiveBytes(cipherBytes);
+            }
+        }
+
+        public static void DecryptFile(string sourceFilePath, string targetFilePath)
+        {
+            string base64Content = File.ReadAllText(sourceFilePath).Trim();
+            byte[] cipherBytes = Convert.FromBase64String(base64Content);
+            byte[]? plainBytes = null;
+
+            try
+            {
+                plainBytes = DecryptBytes(cipherBytes);
+                File.WriteAllBytes(targetFilePath, plainBytes);
+            }
+            finally
+            {
+                ClearSensitiveBytes(cipherBytes);
+                ClearSensitiveBytes(plainBytes);
+            }
+        }
+
         public static string Encrypt(string plainText)
         {
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);

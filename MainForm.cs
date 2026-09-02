@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace CryptoTxt
@@ -13,11 +14,13 @@ namespace CryptoTxt
         {
             InitializeComponent();
             Text = $"CryptoTxt - v{AppInfo.Version}";
+            UpdateKeyStatusUI();
         }
 
         private static bool IsPlainTextFile(string path)
         {
-            return path.EndsWith(PlainTextExtension, StringComparison.OrdinalIgnoreCase);
+            return path.EndsWith(PlainTextExtension, StringComparison.OrdinalIgnoreCase)
+                && !path.EndsWith(EncryptedTextExtension, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsEncryptedTextFile(string path)
@@ -27,13 +30,18 @@ namespace CryptoTxt
 
         private static bool IsSupportedTxtPath(string path)
         {
+            if (Directory.Exists(path))
+            {
+                return true;
+            }
+
             return File.Exists(path) && (IsPlainTextFile(path) || IsEncryptedTextFile(path));
         }
 
         private static void ShowTxtOnlyWarning()
         {
             MessageBox.Show(
-                "Este aplicativo trabalha somente com arquivos .txt e .txt.enc.",
+                "Este aplicativo trabalha somente com arquivos .txt, .txt.enc e pastas contendo esses arquivos.",
                 "CryptoTxt",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -48,6 +56,26 @@ namespace CryptoTxt
             }
 
             txtFilePath.Text = path;
+        }
+
+        private void UpdateKeyStatusUI()
+        {
+            if (Utils.CryptoUtils.IsCustomKeyActive)
+            {
+                lblKeyStatus.Text = "Chave ativa: Chave Personalizada (CSK3)";
+                lblKeyStatus.ForeColor = System.Drawing.Color.FromArgb(40, 167, 69);
+                btnImportKey.Text = "Chave Ativa";
+                btnImportKey.BackColor = System.Drawing.Color.FromArgb(40, 167, 69);
+                btnImportKey.ForeColor = System.Drawing.Color.White;
+            }
+            else
+            {
+                lblKeyStatus.Text = "Chave ativa: Chave Padrão (Compartilhada)";
+                lblKeyStatus.ForeColor = System.Drawing.Color.DimGray;
+                btnImportKey.Text = "Importar Chave";
+                btnImportKey.BackColor = System.Drawing.Color.LightGray;
+                btnImportKey.ForeColor = System.Drawing.Color.Black;
+            }
         }
 
         private static string GetAvailablePath(string desiredPath)
@@ -73,11 +101,6 @@ namespace CryptoTxt
 
         private void btnSelectFile_Click(object? sender, EventArgs e)
         {
-            SelectFilePath();
-        }
-
-        private void SelectFilePath()
-        {
             using var openFileDialog = new OpenFileDialog
             {
                 Filter = "Arquivos CryptoTxt (*.txt;*.txt.enc)|*.txt;*.txt.enc",
@@ -90,21 +113,42 @@ namespace CryptoTxt
             }
         }
 
+        private void btnSelectFolder_Click(object? sender, EventArgs e)
+        {
+            using var folderDialog = new FolderBrowserDialog
+            {
+                Description = "Selecione uma pasta contendo arquivos .txt ou .txt.enc",
+                UseDescriptionForTitle = true
+            };
+
+            if (folderDialog.ShowDialog() == DialogResult.OK)
+            {
+                SetSelectedPath(folderDialog.SelectedPath);
+            }
+        }
+
         private void btnEncrypt_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtFilePath?.Text))
+            string path = txtFilePath?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
             {
-                MessageBox.Show("Selecione um arquivo .txt válido.");
+                MessageBox.Show("Selecione um arquivo .txt ou uma pasta válida.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (!File.Exists(txtFilePath.Text))
+            if (Directory.Exists(path))
             {
-                MessageBox.Show("Selecione um arquivo .txt válido.");
+                EncryptDirectory(path);
                 return;
             }
 
-            if (!IsPlainTextFile(txtFilePath.Text))
+            if (!File.Exists(path))
+            {
+                MessageBox.Show("O arquivo selecionado não foi encontrado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!IsPlainTextFile(path))
             {
                 MessageBox.Show("Selecione um arquivo .txt para criptografar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -112,33 +156,81 @@ namespace CryptoTxt
 
             try
             {
-                string plainText = File.ReadAllText(txtFilePath.Text);
-                string encrypted = Utils.CryptoUtils.Encrypt(plainText);
-                string outputPath = GetAvailablePath(txtFilePath.Text + ".enc");
-                File.WriteAllText(outputPath, encrypted);
-                MessageBox.Show($"Arquivo .txt criptografado com sucesso!\nSalvo como: {outputPath}");
+                string outputPath = GetAvailablePath(path + ".enc");
+                Utils.CryptoUtils.EncryptFile(path, outputPath);
+                MessageBox.Show($"Arquivo criptografado com sucesso!\n\nSalvo como: {outputPath}", "CryptoTxt", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao criptografar: {ex.Message}");
+                MessageBox.Show($"Erro ao criptografar: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void EncryptDirectory(string directoryPath)
+        {
+            try
+            {
+                string[] files = Directory.GetFiles(directoryPath, "*.txt", SearchOption.AllDirectories)
+                    .Where(f => !f.EndsWith(EncryptedTextExtension, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+
+                if (files.Length == 0)
+                {
+                    MessageBox.Show("Nenhum arquivo .txt encontrado na pasta selecionada.", "CryptoTxt", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                int success = 0;
+                int failed = 0;
+
+                foreach (string file in files)
+                {
+                    try
+                    {
+                        string outputPath = GetAvailablePath(file + ".enc");
+                        Utils.CryptoUtils.EncryptFile(file, outputPath);
+                        success++;
+                    }
+                    catch
+                    {
+                        failed++;
+                    }
+                }
+
+                MessageBox.Show(
+                    $"Criptografia em lote concluída!\n\nArquivos criptografados: {success}\nFalhas: {failed}",
+                    "CryptoTxt",
+                    MessageBoxButtons.OK,
+                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao ler pasta: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnDecrypt_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtFilePath?.Text))
+            string path = txtFilePath?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
             {
-                MessageBox.Show("Selecione um arquivo .txt.enc válido.");
+                MessageBox.Show("Selecione um arquivo .txt.enc ou uma pasta válida.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (!File.Exists(txtFilePath.Text))
+            if (Directory.Exists(path))
             {
-                MessageBox.Show("Selecione um arquivo .txt.enc válido.");
+                DecryptDirectory(path);
                 return;
             }
 
-            if (!IsEncryptedTextFile(txtFilePath.Text))
+            if (!File.Exists(path))
+            {
+                MessageBox.Show("O arquivo selecionado não foi encontrado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!IsEncryptedTextFile(path))
             {
                 MessageBox.Show("Selecione um arquivo .txt.enc para descriptografar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -146,38 +238,69 @@ namespace CryptoTxt
 
             try
             {
-                string plainText;
-                try
-                {
-                    string encrypted = File.ReadAllText(txtFilePath.Text);
-                    plainText = Utils.CryptoUtils.Decrypt(encrypted);
-                }
-                catch
-                {
-                    MessageBox.Show("Não foi possível descriptografar. A chave pode estar incorreta ou o arquivo pode ter sido alterado.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                string outputPath = txtFilePath.Text.Substring(0, txtFilePath.Text.Length - ".enc".Length);
+                string outputPath = path.Substring(0, path.Length - ".enc".Length);
                 outputPath = GetAvailablePath(outputPath);
-                File.WriteAllText(outputPath, plainText);
-                MessageBox.Show($"Arquivo .txt descriptografado com sucesso!\nSalvo como: {outputPath}");
+                Utils.CryptoUtils.DecryptFile(path, outputPath);
+                MessageBox.Show($"Arquivo descriptografado com sucesso!\n\nSalvo como: {outputPath}", "CryptoTxt", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception)
             {
-                MessageBox.Show($"Erro ao descriptografar {txtFilePath.Text}.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Não foi possível descriptografar. A chave pode estar incorreta ou o arquivo pode ter sido alterado.", "Erro de Chave", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DecryptDirectory(string directoryPath)
+        {
+            try
+            {
+                string[] files = Directory.GetFiles(directoryPath, "*.txt.enc", SearchOption.AllDirectories);
+
+                if (files.Length == 0)
+                {
+                    MessageBox.Show("Nenhum arquivo .txt.enc encontrado na pasta selecionada.", "CryptoTxt", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                int success = 0;
+                int failed = 0;
+
+                foreach (string file in files)
+                {
+                    try
+                    {
+                        string outputPath = file.Substring(0, file.Length - ".enc".Length);
+                        outputPath = GetAvailablePath(outputPath);
+                        Utils.CryptoUtils.DecryptFile(file, outputPath);
+                        success++;
+                    }
+                    catch
+                    {
+                        failed++;
+                    }
+                }
+
+                MessageBox.Show(
+                    $"Descriptografia em lote concluída!\n\nArquivos descriptografados: {success}\nFalhas: {failed}",
+                    "CryptoTxt",
+                    MessageBoxButtons.OK,
+                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao ler pasta: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnPreview_Click(object? sender, EventArgs e)
         {
-            if (txtFilePath?.Text == null || !File.Exists(txtFilePath.Text))
+            string path = txtFilePath?.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path) || !IsEncryptedTextFile(path))
             {
-                MessageBox.Show("Selecione um arquivo .txt.enc válido.");
+                MessageBox.Show("Selecione um arquivo .txt.enc válido para visualizar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            VisualizarArquivoSelecionado(txtFilePath.Text);
+            VisualizarArquivoSelecionado(path);
         }
 
         private void btnExportKey_Click(object? sender, EventArgs e)
@@ -208,9 +331,8 @@ namespace CryptoTxt
             if (Utils.CryptoUtils.IsCustomKeyActive)
             {
                 Utils.CryptoUtils.ClearImportedKeyAndIV();
-                btnImportKey.Text = "Importar Chave";
-                btnImportKey.BackColor = System.Drawing.Color.LightGray;
-                MessageBox.Show("Chave ativa desativada. O programa voltou a usar a chave padrão embutida.", "Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UpdateKeyStatusUI();
+                MessageBox.Show("Chave personalizada desativada. O programa voltou a usar a chave padrão embutida.", "Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -230,8 +352,7 @@ namespace CryptoTxt
                         throw new Exception("Arquivo de chave inválido. Use somente o padrão CSK3 exportado por CryptoFotos, CryptoMulti ou CryptoTxt.");
                     }
 
-                    btnImportKey.Text = "Chave Importada";
-                    btnImportKey.BackColor = System.Drawing.Color.FromArgb(40, 167, 69);
+                    UpdateKeyStatusUI();
                     MessageBox.Show("Chave importada com sucesso! Ela será usada para criptografar/descriptografar arquivos até ser desativada.", "Importar Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
@@ -250,11 +371,10 @@ namespace CryptoTxt
             {
                 (keyBytes, ivBytes) = Utils.CryptoUtils.GenerateNewKeyMaterial();
                 Utils.CryptoUtils.ImportKeyAndIV(keyBytes, ivBytes);
-                btnImportKey.Text = "Chave Gerada";
-                btnImportKey.BackColor = System.Drawing.Color.FromArgb(40, 167, 69);
+                UpdateKeyStatusUI();
 
                 MessageBox.Show(
-                    "Nova chave gerada e carregada. Use Exportar Chave para salvar essa chave em arquivo.",
+                    "Nova chave gerada e carregada com sucesso!\n\nLembre-se de clicar em 'Exportar Chave' para salvar o arquivo de chave antes de fechar o programa.",
                     "CryptoTxt",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -306,21 +426,15 @@ namespace CryptoTxt
 
         private void VisualizarArquivoSelecionado(string caminho)
         {
-            if (string.IsNullOrWhiteSpace(caminho) || !File.Exists(caminho) || !IsEncryptedTextFile(caminho))
-            {
-                MessageBox.Show("Selecione um arquivo .txt.enc para visualizar.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             try
             {
-                string encrypted = File.ReadAllText(caminho);
+                string encrypted = File.ReadAllText(caminho).Trim();
                 string plainText = Utils.CryptoUtils.Decrypt(encrypted);
                 ShowPreviewForm(Path.GetFileName(caminho), plainText);
             }
             catch (Exception)
             {
-                MessageBox.Show($"Erro ao visualizar {Path.GetFileName(caminho)}: a chave pode estar incorreta ou o arquivo pode ter sido alterado.");
+                MessageBox.Show($"Erro ao visualizar {Path.GetFileName(caminho)}: a chave pode estar incorreta ou o arquivo pode ter sido alterado.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -329,10 +443,45 @@ namespace CryptoTxt
             using var previewForm = new Form
             {
                 Text = $"Visualização: {fileName}",
-                Width = 600,
-                Height = 500,
-                StartPosition = FormStartPosition.CenterParent
+                Width = 650,
+                Height = 520,
+                StartPosition = FormStartPosition.CenterParent,
+                Font = new System.Drawing.Font("Segoe UI", 9F)
             };
+
+            var pnlTop = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 36,
+                Padding = new Padding(8, 4, 8, 4)
+            };
+
+            int lineCount = plainText.Length == 0 ? 0 : plainText.Split('\n').Length;
+            var lblInfo = new Label
+            {
+                Text = $"Linhas: {lineCount} | Caracteres: {plainText.Length}",
+                AutoSize = false,
+                Dock = DockStyle.Left,
+                Width = 300,
+                TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
+                ForeColor = System.Drawing.Color.DimGray
+            };
+
+            var btnCopy = new Button
+            {
+                Text = "Copiar Conteúdo",
+                Dock = DockStyle.Right,
+                Width = 140,
+                Height = 28
+            };
+            btnCopy.Click += (s, e) =>
+            {
+                Clipboard.SetText(plainText.Length > 0 ? plainText : " ");
+                MessageBox.Show("Conteúdo copiado para a área de transferência!", "CryptoTxt", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            };
+
+            pnlTop.Controls.Add(lblInfo);
+            pnlTop.Controls.Add(btnCopy);
 
             var textBox = new TextBox
             {
@@ -341,10 +490,12 @@ namespace CryptoTxt
                 ScrollBars = ScrollBars.Both,
                 Dock = DockStyle.Fill,
                 Font = new System.Drawing.Font("Consolas", 10),
-                Text = plainText
+                Text = plainText,
+                WordWrap = false
             };
 
             previewForm.Controls.Add(textBox);
+            previewForm.Controls.Add(pnlTop);
             previewForm.ShowDialog(this);
         }
     }

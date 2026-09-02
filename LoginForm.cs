@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using CryptoTxt.Utils;
 
@@ -16,7 +16,7 @@ namespace CryptoTxt
         {
             InitializeComponent();
             Text = $"Login - CryptoTxt v{AppInfo.Version}";
-            lblVersion.Text = string.Empty;
+            lblVersion.Text = $"v{AppInfo.Version}";
 
             try
             {
@@ -31,6 +31,11 @@ namespace CryptoTxt
             ApplyLoginConfiguration();
             defaultHintText = lblHint.Text;
             defaultHintVisible = lblHint.Visible;
+        }
+
+        private void chkShowPass_CheckedChanged(object? sender, EventArgs e)
+        {
+            txtPass.PasswordChar = chkShowPass.Checked ? '\0' : '*';
         }
 
         private void ApplyLoginConfiguration()
@@ -48,6 +53,9 @@ namespace CryptoTxt
         private async void ApplyLockoutAsync()
         {
             btnLogin.Enabled = false;
+            txtUser.Enabled = false;
+            txtPass.Enabled = false;
+            chkShowPass.Enabled = false;
 
             while (DateTime.UtcNow < lockoutUntilUtc)
             {
@@ -58,8 +66,12 @@ namespace CryptoTxt
             }
 
             btnLogin.Enabled = true;
+            txtUser.Enabled = true;
+            txtPass.Enabled = true;
+            chkShowPass.Enabled = true;
             lblHint.Text = defaultHintText;
             lblHint.Visible = defaultHintVisible;
+            txtPass.Focus();
         }
 
         private void RegisterFailure(string message)
@@ -80,7 +92,7 @@ namespace CryptoTxt
             MessageBox.Show(message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void btnLogin_Click(object sender, EventArgs e)
+        private void btnLogin_Click(object? sender, EventArgs e)
         {
             if (DateTime.UtcNow < lockoutUntilUtc)
             {
@@ -93,7 +105,16 @@ namespace CryptoTxt
                 return;
             }
 
-            if (loginConfiguration.ValidateCredentials(txtUser.Text, txtPass.Text))
+            string user = txtUser.Text.Trim();
+            string pass = txtPass.Text;
+
+            if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass))
+            {
+                MessageBox.Show("Informe o usuário e a senha.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (loginConfiguration.ValidateCredentials(user, pass))
             {
                 failedAttempts = 0;
                 DialogResult = DialogResult.OK;

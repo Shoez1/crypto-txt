@@ -1,6 +1,7 @@
 # Build results
 bin/
 obj/
+TestResults/
 *.user
 *.suo
 *.vs/
@@ -9,9 +10,11 @@ obj/
 *.pdb
 *.cache
 *.log
+strix_runs/
 
-# Visual Studio Code
+# IDE e editores
 .vscode/
+.idea/
 
 # Sistema operacional
 Thumbs.db

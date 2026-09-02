@@ -1,6 +1,6 @@
 version:1.4
-usuario:root
-salt:dFWt+s7nuoBp2LiTnEq2CQ==
-senhahash:p6gm5gr+Fjau9B+/mfd47Ky1sIK24q+gUZ3wjyvJcww=
+usuario:testuser
+salt:47ql6PoB+qhQAANtOMoNyw==
+senhahash:BQMK0JvAuG3JoQxnjcyFPk/Um/o5EDoNtLTHajdjI90=
 iteracoes:310000
-dicadesenha:r...A
+dicadesenha:minhadica

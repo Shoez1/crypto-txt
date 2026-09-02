@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -202,47 +202,7 @@ namespace CryptoCommon
 
         private static byte[] DeriveFileKey(byte[] rootKey, byte[] salt)
         {
-            return HkdfSha256(rootKey, salt, FileKeyInfo, KeySize);
-        }
-
-        private static byte[] HkdfSha256(byte[] inputKeyMaterial, byte[] salt, byte[] info, int outputLength)
-        {
-            using var extract = new HMACSHA256(salt);
-            byte[] pseudoRandomKey = extract.ComputeHash(inputKeyMaterial);
-
-            try
-            {
-                using var expand = new HMACSHA256(pseudoRandomKey);
-                byte[] output = new byte[outputLength];
-                byte[] previousBlock = Array.Empty<byte>();
-                int bytesWritten = 0;
-                byte counter = 1;
-
-                while (bytesWritten < outputLength)
-                {
-                    byte[] blockInput = new byte[previousBlock.Length + info.Length + 1];
-                    Buffer.BlockCopy(previousBlock, 0, blockInput, 0, previousBlock.Length);
-                    Buffer.BlockCopy(info, 0, blockInput, previousBlock.Length, info.Length);
-                    blockInput[blockInput.Length - 1] = counter;
-
-                    byte[] currentBlock = expand.ComputeHash(blockInput);
-                    int bytesToCopy = Math.Min(currentBlock.Length, outputLength - bytesWritten);
-                    Buffer.BlockCopy(currentBlock, 0, output, bytesWritten, bytesToCopy);
-
-                    ClearSensitiveBytes(previousBlock);
-                    ClearSensitiveBytes(blockInput);
-                    previousBlock = currentBlock;
-                    bytesWritten += bytesToCopy;
-                    counter++;
-                }
-
-                ClearSensitiveBytes(previousBlock);
-                return output;
-            }
-            finally
-            {
-                ClearSensitiveBytes(pseudoRandomKey);
-            }
+            return HKDF.DeriveKey(HashAlgorithmName.SHA256, rootKey, KeySize, salt, FileKeyInfo);
         }
 
         private static bool IsFormat(byte[] data, byte[] magic)
