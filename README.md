@@ -27,10 +27,11 @@ O script:
 
 1. Gera ou atualiza `login.txt` com hash seguro.
 2. Executa `dotnet restore`.
-3. Gera um par de chaves RSA-2048 **novo a cada build**, escreve `Security/IntegrityToken.g.cs` com a chave pública e executa `dotnet publish` (single-file self-contained).
-4. Assina o EXE produzido (SHA-256 + RSA) e acrescenta o overlay `CTXSIGN1` no final do arquivo.
-5. Restaura `Security/IntegrityToken.g.cs` para o stub de desenvolvimento (nenhum segredo fica no repositório).
-6. Salva o log em `build-exe.log`.
+3. Gera uma chave criptográfica AES-256 (32 bytes) e IV (16 bytes) **novos a cada build**, atualizando a chave compartilhada embutida em `Utils/SharedCrypto.cs` para que cada executável seja único.
+4. Gera um par de chaves RSA-2048 **novo a cada build**, escreve `Security/IntegrityToken.g.cs` com a chave pública e executa `dotnet publish` (single-file self-contained).
+5. Assina o EXE produzido (SHA-256 + RSA) e acrescenta o overlay `CTXSIGN1` no final do arquivo.
+6. Restaura `Security/IntegrityToken.g.cs` para o stub de desenvolvimento (nenhum segredo fica no repositório).
+7. Salva o log em `build-exe.log`.
 
 > Builds feitos com `dotnet build`/`dotnet publish` diretos **não** assinam o EXE (o token fica vazio) e o app usa o modo auto-pin. Use `build-exe.bat` para distribuir EXE com assinatura de integridade.
 

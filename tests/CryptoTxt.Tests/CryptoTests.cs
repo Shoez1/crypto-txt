@@ -8,6 +8,7 @@ using CryptoTxt.Utils;
 namespace CryptoTxt.Tests;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class CryptoTests
 {
     [TestMethod]
@@ -51,6 +52,16 @@ public sealed class CryptoTests
         {
             SharedCrypto.DecryptBytesWithKey(encrypted, key, iv);
         });
+    }
+
+    [TestMethod]
+    public void GetOrCreateUserKeyMaterial_ReturnsValidKeyAndIVLengths()
+    {
+        (byte[] key, byte[] iv) = SharedCrypto.GetOrCreateUserKeyMaterial();
+        Assert.IsNotNull(key);
+        Assert.IsNotNull(iv);
+        Assert.HasCount(32, key);
+        Assert.HasCount(16, iv);
     }
 
     [TestMethod]
