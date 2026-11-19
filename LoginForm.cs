@@ -58,10 +58,20 @@ namespace CryptoTxt
 
             while (DateTime.UtcNow < lockoutUntilUtc)
             {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
                 TimeSpan remaining = lockoutUntilUtc - DateTime.UtcNow;
                 lblHint.Text = $"Muitas tentativas. Aguarde {Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds))}s.";
                 lblHint.Visible = true;
                 await System.Threading.Tasks.Task.Delay(1000);
+            }
+
+            if (IsDisposed)
+            {
+                return;
             }
 
             btnLogin.Enabled = true;

@@ -108,7 +108,7 @@ namespace CryptoTxt
             this.lblKeyStatus.Name = "lblKeyStatus";
             this.lblKeyStatus.Size = new System.Drawing.Size(350, 16);
             this.lblKeyStatus.TabIndex = 6;
-            this.lblKeyStatus.Text = "Chave ativa: Chave Padrão (Compartilhada)";
+            this.lblKeyStatus.Text = "Chave ativa: Chave Padrão (embutida — não é segredo)";
             this.lblKeyStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // btnExportKey

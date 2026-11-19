@@ -108,6 +108,7 @@ namespace CryptoCommon
             byte[] ciphertext = new byte[data.Length - minimumSize];
             byte[] encryptionKey = Array.Empty<byte>();
             byte[] plaintext = new byte[ciphertext.Length];
+            bool decrypted = false;
 
             Buffer.BlockCopy(data, 0, header, 0, header.Length);
             Buffer.BlockCopy(data, DataMagic.Length, salt, 0, salt.Length);
@@ -120,6 +121,7 @@ namespace CryptoCommon
                 encryptionKey = DeriveFileKey(keyBytes, salt);
                 using var aes = new AesGcm(encryptionKey, TagSize);
                 aes.Decrypt(nonce, ciphertext, tag, plaintext, header);
+                decrypted = true;
                 return plaintext;
             }
             catch (CryptographicException ex)
@@ -136,6 +138,11 @@ namespace CryptoCommon
                 ClearSensitiveBytes(tag);
                 ClearSensitiveBytes(ciphertext);
                 ClearSensitiveBytes(encryptionKey);
+
+                if (!decrypted)
+                {
+                    ClearSensitiveBytes(plaintext);
+                }
             }
         }
 

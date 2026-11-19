@@ -21,16 +21,13 @@ namespace CryptoTxt.Utils
 
         public bool ValidateCredentials(string userName, string password)
         {
-            if (!string.Equals(userName, UserName, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
             if (PasswordSalt == null || PasswordHash == null)
             {
                 return false;
             }
 
+            // Deriva o hash mesmo com usuário incorreto para não revelar
+            // a existência do nome de usuário pelo tempo de resposta.
             byte[] computedHash = Rfc2898DeriveBytes.Pbkdf2(
                 password,
                 PasswordSalt,
@@ -40,7 +37,9 @@ namespace CryptoTxt.Utils
 
             try
             {
-                return CryptographicOperations.FixedTimeEquals(computedHash, PasswordHash);
+                bool userMatches = string.Equals(userName, UserName, StringComparison.Ordinal);
+                bool passwordMatches = CryptographicOperations.FixedTimeEquals(computedHash, PasswordHash);
+                return userMatches & passwordMatches;
             }
             finally
             {

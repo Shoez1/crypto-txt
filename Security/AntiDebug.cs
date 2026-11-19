@@ -21,13 +21,15 @@ namespace CryptoTxt.Security
         private const uint FlgHeapValidateParameters = 0x40;
         private const uint DebugHeapMask = FlgHeapEnableTailCheck | FlgHeapEnableFreeCheck | FlgHeapValidateParameters;
 
+        // Nomes genéricos como "ida", "kd", "cdb" e "xdbg" foram removidos:
+        // qualquer programa com um desses nomes bloquearia o aplicativo.
         private static readonly string[] DebuggerProcessNames =
         {
             "x64dbg", "x32dbg", "x64_dbg", "x96dbg",
             "ollydbg", "ollydbg2", "ollyice",
-            "ida", "ida32", "ida64", "idaq", "idaq64",
-            "windbg", "kd", "cdb",
-            "dnspy", "cheatengine", "cheat_engine", "xdbg"
+            "ida32", "ida64", "idaq", "idaq64",
+            "windbg",
+            "dnspy", "cheatengine", "cheat_engine"
         };
 
         private static readonly string[] DebuggerWindowTokens =
@@ -64,7 +66,7 @@ namespace CryptoTxt.Security
         private static extern int NtQueryInformationProcess(IntPtr hProcess, int processInformationClass, ref int processInformation, int processInformationLength, out int returnLength);
 
         [DllImport("ntdll.dll")]
-        private static extern IntPtr NtCurrentPeb();
+        private static extern IntPtr RtlGetCurrentPeb();
 
         [DllImport("user32.dll")]
         private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
@@ -85,72 +87,32 @@ namespace CryptoTxt.Security
             }
         }
 
-        public static bool IsBeingDebugged()
-        {
-            try
+        private static readonly DebugChecks Probes = new DebugChecks(
+            new Func<bool>[]
             {
-                if (Debugger.IsAttached)
-                {
-                    return true;
-                }
-
-                if (IsDebuggerPresent())
-                {
-                    return true;
-                }
-
-                if (IsRemoteDebuggerPresent())
-                {
-                    return true;
-                }
-
-                if (HasDebugPort())
-                {
-                    return true;
-                }
-
-                if (HasDebugObjectHandle())
-                {
-                    return true;
-                }
-
-                if (DebugFlagsCleared())
-                {
-                    return true;
-                }
-
-                if (PebBeingDebuggedSet())
-                {
-                    return true;
-                }
-
-                if (PebHeapFlagsSet())
-                {
-                    return true;
-                }
-
-                if (HardwareBreakpointsSet())
-                {
-                    return true;
-                }
-
-                if (DebuggerProcessRunning())
-                {
-                    return true;
-                }
-
-                if (DebuggerWindowPresent())
-                {
-                    return true;
-                }
-            }
-            catch
+                () => Debugger.IsAttached,
+                IsDebuggerPresent,
+                IsRemoteDebuggerPresent,
+                HasDebugPort,
+                HasDebugObjectHandle,
+                DebugFlagsCleared,
+                PebBeingDebuggedSet,
+                PebHeapFlagsSet,
+                HardwareBreakpointsSet
+            },
+            new Func<bool>[]
             {
-                return false;
-            }
+                DebuggerProcessRunning,
+                DebuggerWindowPresent
+            });
 
-            return false;
-        }
+        public static bool IsBeingDebugged() => Probes.IsFull();
+
+        /// <summary>
+        /// Apenas as checagens nativas: usada pelo watchdog, que roda várias vezes por segundo.
+        /// As heurísticas de processo/janela ficam somente na verificação de startup.
+        /// </summary>
+        public static bool IsBeingDebuggedFast() => Probes.IsFast();
 
         public static void Terminate()
         {
@@ -179,15 +141,17 @@ namespace CryptoTxt.Security
 
         private static bool HasDebugObjectHandle()
         {
-            int debugHandle = 0;
+            // HANDLE é IntPtr: usar int aqui corromperia a pilha no x64,
+            // pois o ntdll grava 8 bytes no buffer informado.
+            IntPtr debugHandle = IntPtr.Zero;
             int returnLength;
             int status = NtQueryInformationProcess(
                 GetCurrentProcess(),
                 ProcessDebugObjectHandle,
                 ref debugHandle,
-                sizeof(int),
+                IntPtr.Size,
                 out returnLength);
-            return status == 0 && debugHandle != 0;
+            return status == 0 && debugHandle != IntPtr.Zero;
         }
 
         private static bool DebugFlagsCleared()
@@ -205,13 +169,13 @@ namespace CryptoTxt.Security
 
         private static bool PebBeingDebuggedSet()
         {
-            IntPtr peb = NtCurrentPeb();
+            IntPtr peb = RtlGetCurrentPeb();
             return peb != IntPtr.Zero && Marshal.ReadByte(peb, 0x02) != 0;
         }
 
         private static bool PebHeapFlagsSet()
         {
-            IntPtr peb = NtCurrentPeb();
+            IntPtr peb = RtlGetCurrentPeb();
             if (peb == IntPtr.Zero)
             {
                 return false;
@@ -294,6 +258,19 @@ namespace CryptoTxt.Security
             }
         }
 
+        internal static bool IsDebuggerProcessName(string processName)
+        {
+            foreach (string debuggerName in DebuggerProcessNames)
+            {
+                if (string.Equals(debuggerName, processName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool DebuggerProcessRunning()
         {
             bool found = false;
@@ -305,15 +282,7 @@ namespace CryptoTxt.Security
                 {
                     try
                     {
-                        string name = process.ProcessName;
-                        foreach (string debuggerName in DebuggerProcessNames)
-                        {
-                            if (string.Equals(debuggerName, name, StringComparison.OrdinalIgnoreCase))
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
+                        found = IsDebuggerProcessName(process.ProcessName);
                     }
                     catch
                     {

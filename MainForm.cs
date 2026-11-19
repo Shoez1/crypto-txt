@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -70,7 +71,7 @@ namespace CryptoTxt
             }
             else
             {
-                lblKeyStatus.Text = "Chave ativa: Chave Padrão (Compartilhada)";
+                lblKeyStatus.Text = "Chave ativa: Chave Padrão (embutida — não é segredo)";
                 lblKeyStatus.ForeColor = System.Drawing.Color.DimGray;
                 btnImportKey.Text = "Importar Chave";
                 btnImportKey.BackColor = System.Drawing.Color.LightGray;
@@ -78,7 +79,7 @@ namespace CryptoTxt
             }
         }
 
-        private static string GetAvailablePath(string desiredPath)
+        internal static string GetAvailablePath(string desiredPath)
         {
             if (!File.Exists(desiredPath))
             {
@@ -86,8 +87,25 @@ namespace CryptoTxt
             }
 
             string directory = Path.GetDirectoryName(desiredPath) ?? string.Empty;
-            string fileName = Path.GetFileNameWithoutExtension(desiredPath);
-            string extension = Path.GetExtension(desiredPath);
+            string fileName;
+            string extension;
+
+            // Preserva a extensão composta para que o arquivo continue válido para o app.
+            if (desiredPath.EndsWith(EncryptedTextExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                extension = EncryptedTextExtension;
+                fileName = Path.GetFileName(desiredPath[..^EncryptedTextExtension.Length]);
+            }
+            else if (desiredPath.EndsWith(PlainTextExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                extension = PlainTextExtension;
+                fileName = Path.GetFileName(desiredPath[..^PlainTextExtension.Length]);
+            }
+            else
+            {
+                fileName = Path.GetFileNameWithoutExtension(desiredPath);
+                extension = Path.GetExtension(desiredPath);
+            }
 
             for (int index = 1; ; index++)
             {
@@ -97,6 +115,26 @@ namespace CryptoTxt
                     return candidate;
                 }
             }
+        }
+
+        private static string FormatFailureDetails(IReadOnlyList<string> failures)
+        {
+            if (failures.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            const int maxDetails = 5;
+            string details = string.Join(
+                Environment.NewLine,
+                failures.Take(maxDetails).Select(failure => $"- {failure}"));
+
+            if (failures.Count > maxDetails)
+            {
+                details += $"{Environment.NewLine}- ... e mais {failures.Count - maxDetails}.";
+            }
+
+            return $"{Environment.NewLine}{Environment.NewLine}Detalhes:{Environment.NewLine}{details}";
         }
 
         private void btnSelectFile_Click(object? sender, EventArgs e)
@@ -181,7 +219,7 @@ namespace CryptoTxt
                 }
 
                 int success = 0;
-                int failed = 0;
+                var failures = new List<string>();
 
                 foreach (string file in files)
                 {
@@ -191,17 +229,17 @@ namespace CryptoTxt
                         Utils.CryptoUtils.EncryptFile(file, outputPath);
                         success++;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        failed++;
+                        failures.Add($"{Path.GetFileName(file)}: {ex.Message}");
                     }
                 }
 
                 MessageBox.Show(
-                    $"Criptografia em lote concluída!\n\nArquivos criptografados: {success}\nFalhas: {failed}",
+                    $"Criptografia em lote concluída!\n\nArquivos criptografados: {success}\nFalhas: {failures.Count}{FormatFailureDetails(failures)}",
                     "CryptoTxt",
                     MessageBoxButtons.OK,
-                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+                    failures.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -262,7 +300,7 @@ namespace CryptoTxt
                 }
 
                 int success = 0;
-                int failed = 0;
+                var failures = new List<string>();
 
                 foreach (string file in files)
                 {
@@ -273,17 +311,17 @@ namespace CryptoTxt
                         Utils.CryptoUtils.DecryptFile(file, outputPath);
                         success++;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        failed++;
+                        failures.Add($"{Path.GetFileName(file)}: {ex.Message}");
                     }
                 }
 
                 MessageBox.Show(
-                    $"Descriptografia em lote concluída!\n\nArquivos descriptografados: {success}\nFalhas: {failed}",
+                    $"Descriptografia em lote concluída!\n\nArquivos descriptografados: {success}\nFalhas: {failures.Count}{FormatFailureDetails(failures)}",
                     "CryptoTxt",
                     MessageBoxButtons.OK,
-                    failed > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+                    failures.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -330,6 +368,17 @@ namespace CryptoTxt
         {
             if (Utils.CryptoUtils.IsCustomKeyActive)
             {
+                DialogResult confirm = MessageBox.Show(
+                    "Desativar a chave personalizada ativa?\n\nOs próximos arquivos serão criptografados com a chave padrão embutida.",
+                    "Desativar Chave",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+                if (confirm != DialogResult.Yes)
+                {
+                    return;
+                }
+
                 Utils.CryptoUtils.ClearImportedKeyAndIV();
                 UpdateKeyStatusUI();
                 MessageBox.Show("Chave personalizada desativada. O programa voltou a usar a chave padrão embutida.", "Chave", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -364,6 +413,20 @@ namespace CryptoTxt
 
         private void btnGenerateKey_Click(object? sender, EventArgs e)
         {
+            if (Utils.CryptoUtils.IsCustomKeyActive)
+            {
+                DialogResult confirm = MessageBox.Show(
+                    "Gerar uma nova chave substituirá a chave personalizada ativa.\n\nSe a chave atual ainda não foi exportada, os arquivos criptografados com ela não poderão ser recuperados. Deseja continuar?",
+                    "Gerar Nova Chave",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+                if (confirm != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
             byte[]? keyBytes = null;
             byte[]? ivBytes = null;
 

@@ -52,7 +52,7 @@ namespace CryptoTxt
 
             while (true)
             {
-                if (Security.AntiDebug.IsBeingDebugged())
+                if (Security.AntiDebug.IsBeingDebuggedFast())
                 {
                     Environment.Exit(1);
                 }
